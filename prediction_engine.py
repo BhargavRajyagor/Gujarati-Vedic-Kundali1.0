@@ -681,14 +681,13 @@ def _active_dasha(dasha_df, when):
     """
     Return the active Vimshottari Dasha row.
 
-    Handles both timezone-aware and timezone-naive datetimes
-    safely by comparing calendar dates.
+    Handles timezone-aware and timezone-naive datetimes
+    by comparing calendar dates.
     """
 
     if dasha_df is None or dasha_df.empty:
         return None
 
-    # Convert the supplied datetime to a calendar date.
     if hasattr(when, "date"):
         when_date = when.date()
     else:
@@ -699,24 +698,11 @@ def _active_dasha(dasha_df, when):
         start = pd.to_datetime(r["Start"])
         end = pd.to_datetime(r["End"])
 
-        # Compare dates rather than mixing aware/naive datetimes.
         start_date = start.date()
         end_date = end.date()
 
         if start_date <= when_date <= end_date:
             return r
-
-    # If the date is outside the generated Dasha table,
-    # return the nearest/latest available period.
-    if len(dasha_df) > 0:
-        first = pd.to_datetime(dasha_df.iloc[0]["Start"]).date()
-        last = pd.to_datetime(dasha_df.iloc[-1]["End"]).date()
-
-        if when_date < first:
-            return dasha_df.iloc[0]
-
-        if when_date > last:
-            return dasha_df.iloc[-1]
 
     return None
 
