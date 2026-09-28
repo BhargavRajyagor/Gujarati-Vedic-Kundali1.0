@@ -22,8 +22,10 @@ import requests
 import swisseph as swe
 from timezonefinder import TimezoneFinder
 import matplotlib
-matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+from matplotlib import font_manager
+matplotlib.use("Agg")
 import folium
 from streamlit_folium import st_folium
 from reportlab.lib.pagesizes import A4
@@ -34,7 +36,6 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Tabl
 from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from matplotlib import font_manager
 
 # Existing calculation/chart layer extracted from the user's app.py.
 # The generated core intentionally excludes the Gradio UI and duplicated prediction engine.
