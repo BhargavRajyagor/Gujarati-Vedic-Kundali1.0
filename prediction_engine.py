@@ -875,7 +875,7 @@ def generate_rule_based_predictions(rows, asc, dasha_df, birth_dt=None):
     now = birth_dt if birth_dt is not None else datetime.now()
     active = _active_dasha(dasha_df, now)
     dasha_reasons = []
-    if active:
+   if active is not None:
         md = active["Mahadasha"]
         ad = active["Antardasha"]
         mod, rs = _dasha_area_modifier(md, ad, planet_map, house_lords)
