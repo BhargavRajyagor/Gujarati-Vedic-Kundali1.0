@@ -2138,6 +2138,127 @@ def north_indian_centers():
         12: (0.75, 0.875)
 
     }
+# ============================================================
+# GUJARATI KUNDALI — SAFE HOUSE TEXT RENDERER
+# ============================================================
+
+def _draw_house_text(
+    ax,
+    text,
+    x,
+    y,
+    width=0.22,
+    height=0.22,
+    fontsize=11,
+    min_fontsize=6,
+    line_spacing=1.15,
+    weight="normal",
+    color="black",
+    clip_patch=None,
+):
+    """
+    Draw text inside a specific Kundali house.
+
+    Features:
+    - automatic line wrapping
+    - automatic font-size reduction
+    - centered alignment
+    - optional clipping to the house polygon
+    - prevents long planet names from crossing house boundaries
+    """
+
+    if text is None:
+        return
+
+    text = str(text).strip()
+
+    if not text:
+        return
+
+    lines = text.split("\n")
+
+    # progressively reduce font if too many lines
+    fs = fontsize
+
+    while fs >= min_fontsize:
+
+        # Approximate maximum characters per line.
+        # Gujarati glyphs are wider than English characters.
+        max_chars = max(
+            5,
+            int(width * 55 * (fontsize / fs))
+        )
+
+        wrapped = []
+
+        for line in lines:
+            words = line.split()
+
+            if not words:
+                wrapped.append("")
+                continue
+
+            current = ""
+
+            for word in words:
+
+                candidate = (
+                    word if not current
+                    else current + " " + word
+                )
+
+                if len(candidate) <= max_chars:
+                    current = candidate
+                else:
+                    if current:
+                        wrapped.append(current)
+
+                    # Extremely long single word
+                    if len(word) > max_chars:
+                        for i in range(0, len(word), max_chars):
+                            wrapped.append(
+                                word[i:i + max_chars]
+                            )
+                        current = ""
+                    else:
+                        current = word
+
+            if current:
+                wrapped.append(current)
+
+        # Approximate vertical capacity
+        max_lines = max(
+            2,
+            int(height * 28 * (fontsize / fs))
+        )
+
+        if len(wrapped) <= max_lines:
+            break
+
+        fs -= 1
+
+    wrapped_text = "\n".join(wrapped)
+
+    txt = ax.text(
+        x,
+        y,
+        wrapped_text,
+        ha="center",
+        va="center",
+        fontsize=fs,
+        fontweight=weight,
+        color=color,
+        linespacing=line_spacing,
+        multialignment="center",
+        zorder=20,
+    )
+
+    # Clip the text to the actual house polygon
+    if clip_patch is not None:
+        txt.set_clip_path(clip_patch)
+
+    return txt
+    
 
 def draw_north_indian(
 
