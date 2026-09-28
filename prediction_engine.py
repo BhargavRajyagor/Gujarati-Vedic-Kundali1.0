@@ -677,14 +677,48 @@ def _dasha_rows_to_datetimes(dasha_df):
     return rows
 
 
-def _active_dasha(dasha_df, when=None):
-    when = when or datetime.now()
-    rows = _dasha_rows_to_datetimes(dasha_df)
-    for r in rows:
-        if r["Start"] <= when <= r["End"]:
+def _active_dasha(dasha_df, when):
+    """
+    Return the active Vimshottari Dasha row.
+
+    Handles both timezone-aware and timezone-naive datetimes
+    safely by comparing calendar dates.
+    """
+
+    if dasha_df is None or dasha_df.empty:
+        return None
+
+    # Convert the supplied datetime to a calendar date.
+    if hasattr(when, "date"):
+        when_date = when.date()
+    else:
+        when_date = pd.to_datetime(when).date()
+
+    for _, r in dasha_df.iterrows():
+
+        start = pd.to_datetime(r["Start"])
+        end = pd.to_datetime(r["End"])
+
+        # Compare dates rather than mixing aware/naive datetimes.
+        start_date = start.date()
+        end_date = end.date()
+
+        if start_date <= when_date <= end_date:
             return r
-    # If current date is beyond generated table, use the last generated period.
-    return rows[-1] if rows else None
+
+    # If the date is outside the generated Dasha table,
+    # return the nearest/latest available period.
+    if len(dasha_df) > 0:
+        first = pd.to_datetime(dasha_df.iloc[0]["Start"]).date()
+        last = pd.to_datetime(dasha_df.iloc[-1]["End"]).date()
+
+        if when_date < first:
+            return dasha_df.iloc[0]
+
+        if when_date > last:
+            return dasha_df.iloc[-1]
+
+    return None
 
 
 def _dasha_area_modifier(md, ad, planet_map, house_lords):
