@@ -2563,49 +2563,36 @@ def draw_north_indian(
     # DISPLAY PLANETS
     # ========================================================
     # IMPORTANT:
-    # Planet names are rendered one-by-one instead of as a single
-    # multiline Matplotlib text object.  This gives us exact vertical
-    # control over the distance between Gujarati planet names.
+    # Do NOT use a single multiline text object here. Gujarati glyphs
+    # have different bounding boxes, and Matplotlib line spacing can
+    # therefore make the text overlap the Kundali diagonals.
     #
-    # The positions are deliberately different for every house because
-    # the North-Indian chart contains triangular corner houses and
-    # diagonal boundaries.  Nothing in the calculation, naming,
-    # renaming, or data-processing logic is changed here.
+    # Each planet is rendered independently at a house-specific safe
+    # anchor. The coordinates below were selected from the actual
+    # North-Indian geometry, not from the generic house centres.
 
-    # Safe interior anchor for the PLANET TEXT in each house.
-    # These are absolute chart coordinates (0..1), not offsets from
-    # north_indian_centers().  They are intentionally kept away from
-    # the diagonal boundaries.
     planet_anchors = {
-        1:  (0.50, 0.665),
-        2:  (0.24, 0.845),
-        3:  (0.145, 0.625),
-        4:  (0.265, 0.395),
-        5:  (0.145, 0.300),
-        6:  (0.265, 0.085),
-        7:  (0.50, 0.285),
-        8:  (0.735, 0.085),
-        9:  (0.855, 0.300),
-        10: (0.735, 0.395),
-        11: (0.855, 0.625),
-        12: (0.76, 0.845),
+        # house : (x, y)
+        1:  (0.50, 0.735),
+        2:  (0.255, 0.885),
+        3:  (0.125, 0.545),
+        4:  (0.255, 0.385),
+        5:  (0.125, 0.235),
+        6:  (0.255, 0.115),
+        7:  (0.50, 0.265),
+        8:  (0.745, 0.115),
+        9:  (0.875, 0.235),
+        10: (0.745, 0.385),
+        11: (0.875, 0.545),
+        12: (0.745, 0.885),
     }
 
-    # Exact line-to-line distance in chart coordinates.
-    # This is much more predictable than Matplotlib's linespacing.
+    # Actual vertical distance between successive planet names.
+    # This is deliberately small; it is NOT Matplotlib's linespacing.
     planet_steps = {
-        1: 0.050,
-        2: 0.042,
-        3: 0.040,
-        4: 0.045,
-        5: 0.040,
-        6: 0.040,
-        7: 0.050,
-        8: 0.040,
-        9: 0.040,
-        10: 0.045,
-        11: 0.040,
-        12: 0.042,
+        1: 0.038, 2: 0.034, 3: 0.032, 4: 0.035,
+        5: 0.032, 6: 0.032, 7: 0.038, 8: 0.032,
+        9: 0.032, 10: 0.035, 11: 0.032, 12: 0.034,
     }
 
     for house, planets in grouped.items():
@@ -2613,43 +2600,43 @@ def draw_north_indian(
         if not planets:
             continue
 
-        planet_x, planet_center_y = planet_anchors[house]
+        x, center_y = planet_anchors[house]
         step = planet_steps[house]
         count = len(planets)
 
-        # Keep the complete group centred around the anchor.
-        first_y = planet_center_y + ((count - 1) * step / 2.0)
-
-        # Smaller type for crowded houses.  The naming itself is never
-        # altered; only its visual size/position is adjusted.
+        # Compact font for crowded houses.
         if count == 1:
-            planet_fontsize = 8.0
+            fontsize = 7.2
         elif count == 2:
-            planet_fontsize = 7.5
+            fontsize = 6.8
         elif count == 3:
-            planet_fontsize = 7.0
+            fontsize = 6.3
         else:
-            planet_fontsize = 6.5
+            fontsize = 5.8
 
-        for index, planet_text in enumerate(planets):
+        # Centre the complete group around the house-specific anchor.
+        first_y = center_y + ((count - 1) * step / 2.0)
 
-            text_y = first_y - (index * step)
+        for i, planet_text in enumerate(planets):
+            y = first_y - (i * step)
 
+            # White knockout is intentional: it hides only the chart
+            # line immediately behind the glyph, without changing any
+            # calculation or naming functionality.
             ax.text(
-                planet_x,
-                text_y,
+                x,
+                y,
                 planet_text,
                 ha="center",
                 va="center",
-                fontsize=planet_fontsize,
+                fontsize=fontsize,
                 fontproperties=GUJ_FONT_BOLD,
-                zorder=20,
-                # Small white knockout prevents a diagonal chart line
-                # from visually passing through Gujarati characters.
+                color="black",
+                zorder=30,
                 bbox=dict(
                     facecolor="white",
                     edgecolor="none",
-                    pad=0.35,
+                    pad=0.8,
                 ),
             )
 
