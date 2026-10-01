@@ -2562,106 +2562,96 @@ def draw_north_indian(
     # ========================================================
     # DISPLAY PLANETS
     # ========================================================
+    # IMPORTANT:
+    # Planet names are rendered one-by-one instead of as a single
+    # multiline Matplotlib text object.  This gives us exact vertical
+    # control over the distance between Gujarati planet names.
+    #
+    # The positions are deliberately different for every house because
+    # the North-Indian chart contains triangular corner houses and
+    # diagonal boundaries.  Nothing in the calculation, naming,
+    # renaming, or data-processing logic is changed here.
+
+    # Safe interior anchor for the PLANET TEXT in each house.
+    # These are absolute chart coordinates (0..1), not offsets from
+    # north_indian_centers().  They are intentionally kept away from
+    # the diagonal boundaries.
+    planet_anchors = {
+        1:  (0.50, 0.665),
+        2:  (0.24, 0.845),
+        3:  (0.145, 0.625),
+        4:  (0.265, 0.395),
+        5:  (0.145, 0.300),
+        6:  (0.265, 0.085),
+        7:  (0.50, 0.285),
+        8:  (0.735, 0.085),
+        9:  (0.855, 0.300),
+        10: (0.735, 0.395),
+        11: (0.855, 0.625),
+        12: (0.76, 0.845),
+    }
+
+    # Exact line-to-line distance in chart coordinates.
+    # This is much more predictable than Matplotlib's linespacing.
+    planet_steps = {
+        1: 0.050,
+        2: 0.042,
+        3: 0.040,
+        4: 0.045,
+        5: 0.040,
+        6: 0.040,
+        7: 0.050,
+        8: 0.040,
+        9: 0.040,
+        10: 0.045,
+        11: 0.040,
+        12: 0.042,
+    }
 
     for house, planets in grouped.items():
 
         if not planets:
-
             continue
 
+        planet_x, planet_center_y = planet_anchors[house]
+        step = planet_steps[house]
+        count = len(planets)
 
-        x, y = centers[
-            house
-        ]
+        # Keep the complete group centred around the anchor.
+        first_y = planet_center_y + ((count - 1) * step / 2.0)
 
-
-        planet_text = "\n".join(
-            planets
-        )
-
-        # ----------------------------------------------------
-        # HOUSE-SPECIFIC PLANET POSITIONING
-        # ----------------------------------------------------
-        # Do NOT use one common offset for all 12 houses.
-        # The North-Indian chart has triangular and diamond-shaped
-        # houses, so the safest text position is different for each
-        # house.  This keeps Gujarati planet names away from the
-        # diagonal boundaries while leaving all calculation and
-        # naming/renaming functionality untouched.
-        #
-        # Values below are offsets from the existing house centers.
-        # Only the visual position of planet names is changed.
-        house_planet_offsets = {
-            1: ( 0.000, -0.105),
-            2: ( 0.000, -0.105),
-            3: ( 0.018, -0.075),
-            4: ( 0.000, -0.090),
-            5: ( 0.018,  0.025),
-            6: ( 0.000,  0.005),
-            7: ( 0.000, -0.095),
-            8: (-0.018,  0.025),
-            9: (-0.018,  0.025),
-            10:( 0.000, -0.090),
-            11:(-0.018, -0.075),
-            12:( 0.000, -0.105),
-        }
-
-        dx, dy = house_planet_offsets.get(
-            house,
-            (0.0, -0.095)
-        )
-
-        planet_x = x + dx
-        planet_y = y + dy
-
-        # Keep multiple planet names compact.
-        planet_count = len(planets)
-
-        if planet_count <= 1:
-            planet_fontsize = 8.2
-            planet_linespacing = 0.78
-        elif planet_count == 2:
-            planet_fontsize = 7.8
-            planet_linespacing = 0.70
-        elif planet_count == 3:
-            planet_fontsize = 7.2
-            planet_linespacing = 0.64
+        # Smaller type for crowded houses.  The naming itself is never
+        # altered; only its visual size/position is adjusted.
+        if count == 1:
+            planet_fontsize = 8.0
+        elif count == 2:
+            planet_fontsize = 7.5
+        elif count == 3:
+            planet_fontsize = 7.0
         else:
-            planet_fontsize = 6.7
-            planet_linespacing = 0.60
+            planet_fontsize = 6.5
 
-        ax.text(
+        for index, planet_text in enumerate(planets):
 
-            planet_x,
+            text_y = first_y - (index * step)
 
-            planet_y,
-
-            planet_text,
-
-            ha="center",
-
-            va="center",
-
-            fontsize=planet_fontsize,
-
-            linespacing=planet_linespacing,
-
-            multialignment="center",
-
-            fontproperties=GUJ_FONT_BOLD,
-
-            zorder=20,
-
-            # White padding prevents a chart line from visually
-            # running through the Gujarati glyphs.
-            bbox=dict(
-                facecolor="white",
-                edgecolor="none",
-                pad=1.5
+            ax.text(
+                planet_x,
+                text_y,
+                planet_text,
+                ha="center",
+                va="center",
+                fontsize=planet_fontsize,
+                fontproperties=GUJ_FONT_BOLD,
+                zorder=20,
+                # Small white knockout prevents a diagonal chart line
+                # from visually passing through Gujarati characters.
+                bbox=dict(
+                    facecolor="white",
+                    edgecolor="none",
+                    pad=0.35,
+                ),
             )
-
-        )
-
 
     # ========================================================
     # CHART TITLE
