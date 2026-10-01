@@ -2559,86 +2559,303 @@ def draw_north_indian(
         )
 
 
-    # ========================================================
+        # ========================================================
     # DISPLAY PLANETS
     # ========================================================
-    # IMPORTANT:
-    # Do NOT use a single multiline text object here. Gujarati glyphs
-    # have different bounding boxes, and Matplotlib line spacing can
-    # therefore make the text overlap the Kundali diagonals.
     #
-    # Each planet is rendered independently at a house-specific safe
-    # anchor. The coordinates below were selected from the actual
-    # North-Indian geometry, not from the generic house centres.
+    # IMPORTANT:
+    # Do NOT use a single multiline text object here.
+    #
+    # Every Gujarati planet name is rendered independently.
+    #
+    # The positions below are intentionally kept inside the
+    # SAFE INTERIOR of each North-Indian Kundali house so that
+    # Gujarati planet names do not sit on the diagonal lines.
+    #
+    # This section ONLY controls DISPLAY POSITION.
+    #
+    # It does NOT change:
+    #   - Planet names
+    #   - Planet renaming
+    #   - Rashi calculation
+    #   - Nakshatra calculation
+    #   - Pada calculation
+    #   - House calculation
+    #   - D1/D9 calculation
+    #   - Any planetary longitude
+    #
+    # ========================================================
 
+
+    # --------------------------------------------------------
+    # SAFE PLANET ANCHORS
+    # --------------------------------------------------------
+    #
+    # house : (x, y)
+    #
+    # These positions are deliberately moved toward the
+    # interior of the corresponding house.
+    #
+    # The important change from the old version is that the
+    # anchors are NOT placed too close to the diagonal lines.
+    #
     planet_anchors = {
-        # house : (x, y)
-        1:  (0.50, 0.735),
-        2:  (0.255, 0.885),
-        3:  (0.125, 0.545),
-        4:  (0.255, 0.385),
-        5:  (0.125, 0.235),
-        6:  (0.255, 0.115),
-        7:  (0.50, 0.265),
-        8:  (0.745, 0.115),
-        9:  (0.875, 0.235),
-        10: (0.745, 0.385),
-        11: (0.875, 0.545),
-        12: (0.745, 0.885),
+
+        # ----------------------------------------------------
+        # TOP / CENTRE
+        # ----------------------------------------------------
+
+        1:  (0.500, 0.705),
+
+        # ----------------------------------------------------
+        # LEFT SIDE
+        # ----------------------------------------------------
+
+        2:  (0.285, 0.855),
+        3:  (0.165, 0.545),
+        4:  (0.285, 0.405),
+        5:  (0.165, 0.285),
+        6:  (0.285, 0.145),
+
+        # ----------------------------------------------------
+        # BOTTOM / CENTRE
+        # ----------------------------------------------------
+
+        7:  (0.500, 0.295),
+
+        # ----------------------------------------------------
+        # RIGHT SIDE
+        # ----------------------------------------------------
+
+        8:  (0.715, 0.145),
+        9:  (0.835, 0.285),
+        10: (0.715, 0.405),
+        11: (0.835, 0.545),
+        12: (0.715, 0.855),
     }
 
-    # Actual vertical distance between successive planet names.
-    # This is deliberately small; it is NOT Matplotlib's linespacing.
+
+    # --------------------------------------------------------
+    # VERTICAL DISTANCE BETWEEN PLANET NAMES
+    # --------------------------------------------------------
+    #
+    # This is the REAL distance between successive text
+    # objects.
+    #
+    # It is NOT Matplotlib line spacing.
+    #
+    # These values are intentionally smaller than the
+    # previous values because the Gujarati glyph bounding
+    # boxes can be larger than their apparent font height.
+    #
     planet_steps = {
-        1: 0.038, 2: 0.034, 3: 0.032, 4: 0.035,
-        5: 0.032, 6: 0.032, 7: 0.038, 8: 0.032,
-        9: 0.032, 10: 0.035, 11: 0.032, 12: 0.034,
+
+        1:  0.030,
+        2:  0.027,
+        3:  0.026,
+        4:  0.028,
+        5:  0.026,
+        6:  0.026,
+
+        7:  0.030,
+
+        8:  0.026,
+        9:  0.026,
+        10: 0.028,
+        11: 0.026,
+        12: 0.027,
     }
+
+
+    # --------------------------------------------------------
+    # ADDITIONAL HOUSE-SPECIFIC Y ADJUSTMENT
+    # --------------------------------------------------------
+    #
+    # This allows the complete group of planet names to be
+    # moved slightly without changing the anchor geometry.
+    #
+    # Positive  = upward
+    # Negative  = downward
+    #
+    # These are DISPLAY-ONLY adjustments.
+    #
+    planet_y_offsets = {
+
+        1:  -0.005,
+
+        2:  -0.008,
+        3:   0.000,
+        4:   0.006,
+        5:   0.000,
+        6:   0.006,
+
+        7:   0.005,
+
+        8:   0.006,
+        9:   0.000,
+        10: -0.006,
+        11:  0.000,
+        12: -0.008,
+    }
+
+
+    # --------------------------------------------------------
+    # DRAW EACH HOUSE'S PLANETS
+    # --------------------------------------------------------
 
     for house, planets in grouped.items():
+
+        # ----------------------------------------------------
+        # Ignore empty houses
+        # ----------------------------------------------------
 
         if not planets:
             continue
 
+
+        # ----------------------------------------------------
+        # Get safe anchor
+        # ----------------------------------------------------
+
+        if house not in planet_anchors:
+            continue
+
         x, center_y = planet_anchors[house]
-        step = planet_steps[house]
+
+
+        # ----------------------------------------------------
+        # Apply small house-specific adjustment
+        # ----------------------------------------------------
+
+        center_y += planet_y_offsets.get(house, 0.0)
+
+
+        # ----------------------------------------------------
+        # Get vertical spacing
+        # ----------------------------------------------------
+
+        step = planet_steps.get(house, 0.026)
+
+
+        # ----------------------------------------------------
+        # Number of planets in this house
+        # ----------------------------------------------------
+
         count = len(planets)
 
-        # Compact font for crowded houses.
-        if count == 1:
-            fontsize = 7.2
-        elif count == 2:
-            fontsize = 6.8
-        elif count == 3:
-            fontsize = 6.3
-        else:
-            fontsize = 5.8
 
-        # Centre the complete group around the house-specific anchor.
-        first_y = center_y + ((count - 1) * step / 2.0)
+        # ----------------------------------------------------
+        # COMPACT FONT FOR CROWDED HOUSES
+        # ----------------------------------------------------
+        #
+        # Keep the existing naming functionality exactly as
+        # it is. Only the visual size is adjusted.
+        #
+        if count == 1:
+
+            fontsize = 7.2
+
+        elif count == 2:
+
+            fontsize = 6.8
+
+        elif count == 3:
+
+            fontsize = 6.3
+
+        elif count == 4:
+
+            fontsize = 5.9
+
+        else:
+
+            fontsize = 5.6
+
+
+        # ----------------------------------------------------
+        # TOTAL HEIGHT OF THE GROUP
+        # ----------------------------------------------------
+        #
+        # Example:
+        #
+        # 1 planet -> 0 spacing
+        # 2 planets -> 1 spacing
+        # 3 planets -> 2 spacings
+        #
+        total_height = (count - 1) * step
+
+
+        # ----------------------------------------------------
+        # CENTRE THE COMPLETE GROUP
+        # ----------------------------------------------------
+        #
+        # This is important.
+        #
+        # Instead of starting at the anchor and extending
+        # downward, the complete group is centred around the
+        # safe anchor.
+        #
+        first_y = center_y + (total_height / 2.0)
+
+
+        # ----------------------------------------------------
+        # DRAW EACH PLANET SEPARATELY
+        # ----------------------------------------------------
 
         for i, planet_text in enumerate(planets):
+
+            # ------------------------------------------------
+            # Calculate exact Y position
+            # ------------------------------------------------
+
             y = first_y - (i * step)
 
-            # White knockout is intentional: it hides only the chart
-            # line immediately behind the glyph, without changing any
-            # calculation or naming functionality.
+
+            # ------------------------------------------------
+            # DRAW PLANET
+            # ------------------------------------------------
+            #
+            # White knockout is retained.
+            #
+            # The smaller pad prevents a large white box
+            # from covering unnecessary portions of the
+            # Kundali lines.
+            #
             ax.text(
+
                 x,
+
                 y,
+
                 planet_text,
+
                 ha="center",
+
                 va="center",
+
                 fontsize=fontsize,
+
                 fontproperties=GUJ_FONT_BOLD,
+
                 color="black",
+
                 zorder=30,
+
                 bbox=dict(
+
                     facecolor="white",
+
                     edgecolor="none",
-                    pad=0.8,
+
+                    pad=0.35,
+
                 ),
             )
+
+
+    # ========================================================
+    # CHART TITLE
+    # ========================================================
 
     # ========================================================
     # CHART TITLE
